@@ -1,0 +1,218 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { profileQuery } from "@/lib/profile";
+import { askNova } from "@/lib/tutor.functions";
+import { AppShell } from "@/components/AppShell";
+import { NovaCharacter } from "@/components/NovaCharacter";
+import { formatMinutes } from "@/lib/curriculum";
+
+export const Route = createFileRoute("/tutor")({
+  head: () => ({
+    meta: [
+      { title: "AI Tutor — chat with Nova | Brainita AI" },
+      {
+        name: "description",
+        content:
+          "Ask Nova, your Brainita AI tutor, to explain any topic, quiz you or plan your study session — step by step, in simple language.",
+      },
+      { property: "og:title", content: "AI Tutor — chat with Nova | Brainita AI" },
+      {
+        property: "og:description",
+        content: "A friendly AI tutor that explains, quizzes and plans your study day.",
+      },
+    ],
+  }),
+  component: TutorPage,
+});
+
+type Msg = { role: "user" | "assistant"; content: string };
+
+const PROMPTS = ["Explain a topic", "Quiz me", "Plan today"];
+
+function TutorPage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { data: profile } = useQuery(profileQuery(user?.id));
+  const ask = useServerFn(askNova);
+
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/" });
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (profile && !profile.onboarded) navigate({ to: "/onboarding" });
+  }, [profile, navigate]);
+
+  useEffect(() => {
+    if (!profile || messages.length) return;
+    const first = profile.full_name?.split(" ")[0] || "there";
+    const weak = profile.weak_subjects?.[0];
+    setMessages([
+      {
+        role: "assistant",
+        content: `Hey ${first}! Ready to study?${
+          weak ? ` We could start with **${weak}** — that's where you asked for help.` : ""
+        } Ask me anything, or tap a suggestion below.`,
+      },
+    ]);
+  }, [profile, messages.length]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
+
+  const send = async (text: string) => {
+    const clean = text.trim();
+    if (!clean || thinking) return;
+    const next: Msg[] = [...messages, { role: "user", content: clean }];
+    setMessages(next);
+    setInput("");
+    setThinking(true);
+    try {
+      const res = await ask({
+        data: {
+          messages: next.slice(-20),
+          student: {
+            name: profile?.full_name,
+            classLevel: profile?.class_level ?? null,
+            board: profile?.board ?? null,
+            goal: profile?.goal ?? null,
+            weak: profile?.weak_subjects ?? [],
+            strong: profile?.strong_subjects ?? [],
+            minutes: profile?.daily_minutes ?? 60,
+          },
+        },
+      });
+      setMessages([...next, { role: "assistant", content: res.reply }]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nova couldn't answer right now.");
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const focus = profile?.weak_subjects?.[0] ?? profile?.goal ?? null;
+
+  return (
+    <AppShell studentName={profile?.full_name}>
+      <div className="grid grid-cols-[minmax(0,1fr)] items-end gap-3 mb-6 sm:flex sm:flex-wrap sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Nova, your AI tutor</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {profile
+              ? `Class ${profile.class_level ?? "—"} · ${profile.board ?? "—"} · Goal: ${profile.goal ?? "—"}`
+              : "Loading your plan…"}
+          </p>
+        </div>
+        <span className="justify-self-start text-xs font-medium px-3 py-1.5 rounded-full bg-primary/15 border border-primary/30 text-glow">
+          Tutoring session live
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-5">
+        <aside className="panel-surface rounded-3xl p-5">
+          <NovaCharacter
+            focus={focus}
+            status={thinking ? "Thinking it through…" : "Listening · ready when you are"}
+          />
+          <div className="mt-3 flex items-center gap-2 text-xs bg-foreground/5 border border-border rounded-xl px-3 py-2">
+            <span className="text-primary">◆</span>
+            <span className="text-muted-foreground">
+              Daily goal:{" "}
+              <span className="text-foreground">
+                {formatMinutes(profile?.daily_minutes ?? 60)}
+              </span>
+            </span>
+          </div>
+        </aside>
+
+        <section className="panel-surface rounded-3xl flex flex-col min-h-[520px]">
+          <div className="px-5 pt-5 pb-3 border-b border-border">
+            <p className="font-display font-semibold">Ask Nova anything</p>
+            <p className="text-xs text-muted-foreground">
+              Explain, quiz, or plan your next session.
+            </p>
+          </div>
+
+          <div className="flex-1 px-4 sm:px-5 py-5 space-y-4 overflow-y-auto max-h-[60vh]">
+            {messages.map((m, i) =>
+              m.role === "assistant" ? (
+                <div key={i} className="flex gap-3 animate-rise">
+                  <div className="size-8 shrink-0 rounded-full grid place-items-center font-display font-semibold text-sm text-primary-foreground gradient-brand">
+                    N
+                  </div>
+                  <div className="max-w-[85%] min-w-0">
+                    <div className="rounded-2xl rounded-tl-sm bg-panel-strong border border-border px-4 py-3 text-sm leading-relaxed prose-nova">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/70 mt-1">Nova · AI Tutor</p>
+                  </div>
+                </div>
+              ) : (
+                <div key={i} className="flex gap-3 flex-row-reverse animate-rise">
+                  <div className="size-8 shrink-0 rounded-full bg-primary/20 border border-primary/40 grid place-items-center font-display font-semibold text-sm text-glow">
+                    {(profile?.full_name || "You").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="max-w-[80%] min-w-0">
+                    <div className="rounded-2xl rounded-tr-sm gradient-brand text-primary-foreground px-4 py-3 text-sm leading-relaxed">
+                      {m.content}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/70 mt-1 text-right">You</p>
+                  </div>
+                </div>
+              ),
+            )}
+            {thinking ? (
+              <p className="text-xs text-accent pl-11">Nova is thinking…</p>
+            ) : null}
+            <div ref={endRef} />
+          </div>
+
+          <div className="px-4 pb-4 pt-2 border-t border-border">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => send(p)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground transition"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                send(input);
+              }}
+              className="flex items-center gap-2 rounded-2xl bg-panel-strong border border-border px-4 py-2"
+            >
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Message Nova…"
+                className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70 py-1.5"
+              />
+              <button
+                disabled={thinking}
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg gradient-brand text-primary-foreground disabled:opacity-50"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
