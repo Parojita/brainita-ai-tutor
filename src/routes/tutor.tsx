@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { profileQuery } from "@/lib/profile";
-import { askNova } from "@/lib/tutor.functions";
+import { askBrainita } from "@/lib/brainita.functions";
 import { AppShell } from "@/components/AppShell";
 import { NovaCharacter } from "@/components/NovaCharacter";
 import { formatMinutes } from "@/lib/curriculum";
@@ -14,13 +14,13 @@ import { formatMinutes } from "@/lib/curriculum";
 export const Route = createFileRoute("/tutor")({
   head: () => ({
     meta: [
-      { title: "AI Tutor — chat with Nova | Brainita AI" },
+      { title: "AI Tutor — chat with Brainita AI" },
       {
         name: "description",
         content:
-          "Ask Nova, your Brainita AI tutor, to explain any topic, quiz you or plan your study session — step by step, in simple language.",
+          "Ask Brainita AI to explain any topic, quiz you or plan your study session — step by step, in simple language.",
       },
-      { property: "og:title", content: "AI Tutor — chat with Nova | Brainita AI" },
+      { property: "og:title", content: "AI Tutor — chat with Brainita AI" },
       {
         property: "og:description",
         content: "A friendly AI tutor that explains, quizzes and plans your study day.",
@@ -38,7 +38,7 @@ function TutorPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { data: profile } = useQuery(profileQuery(user?.id));
-  const ask = useServerFn(askNova);
+  const ask = useServerFn(askBrainita);
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -79,23 +79,13 @@ function TutorPage() {
     setInput("");
     setThinking(true);
     try {
-      const res = await ask({
-        data: {
-          messages: next.slice(-20),
-          student: {
-            name: profile?.full_name,
-            classLevel: profile?.class_level ?? null,
-            board: profile?.board ?? null,
-            goal: profile?.goal ?? null,
-            weak: profile?.weak_subjects ?? [],
-            strong: profile?.strong_subjects ?? [],
-            minutes: profile?.daily_minutes ?? 60,
-          },
-        },
-      });
+      const res = await ask({ data: { message: clean } });
       setMessages([...next, { role: "assistant", content: res.reply }]);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nova couldn't answer right now.");
+    } catch {
+      const fallback =
+        "Brainita AI is having trouble connecting right now. Please try again.";
+      setMessages([...next, { role: "assistant", content: fallback }]);
+      toast.error(fallback);
     } finally {
       setThinking(false);
     }
@@ -107,7 +97,7 @@ function TutorPage() {
     <AppShell studentName={profile?.full_name}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-end gap-3 mb-6 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Nova, your AI tutor</h1>
+          <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Brainita AI, your AI tutor</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {profile
               ? `Class ${profile.class_level ?? "—"} · ${profile.board ?? "—"} · Goal: ${profile.goal ?? "—"}`
@@ -122,8 +112,9 @@ function TutorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-5">
         <aside className="panel-surface rounded-3xl p-5">
           <NovaCharacter
+            /* set imageSrc="/brainita-ai.png" once the image is added to /public */
             focus={focus}
-            status={thinking ? "Thinking it through…" : "Listening · ready when you are"}
+            status={thinking ? "Thinking…" : "Ready to help"}
           />
           <div className="mt-3 flex items-center gap-2 text-xs bg-foreground/5 border border-border rounded-xl px-3 py-2">
             <span className="text-primary">◆</span>
@@ -138,7 +129,7 @@ function TutorPage() {
 
         <section className="panel-surface rounded-3xl flex flex-col min-h-[520px]">
           <div className="px-5 pt-5 pb-3 border-b border-border">
-            <p className="font-display font-semibold">Ask Nova anything</p>
+            <p className="font-display font-semibold">Ask Brainita AI anything</p>
             <p className="text-xs text-muted-foreground">
               Explain, quiz, or plan your next session.
             </p>
@@ -149,13 +140,13 @@ function TutorPage() {
               m.role === "assistant" ? (
                 <div key={i} className="flex gap-3 animate-rise">
                   <div className="size-8 shrink-0 rounded-full grid place-items-center font-display font-semibold text-sm text-primary-foreground gradient-brand">
-                    N
+                    B
                   </div>
                   <div className="max-w-[85%] min-w-0">
                     <div className="rounded-2xl rounded-tl-sm bg-panel-strong border border-border px-4 py-3 text-sm leading-relaxed prose-nova">
                       <ReactMarkdown>{m.content}</ReactMarkdown>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/70 mt-1">Nova · AI Tutor</p>
+                    <p className="text-[11px] text-muted-foreground/70 mt-1">Brainita AI · AI Tutor</p>
                   </div>
                 </div>
               ) : (
@@ -173,7 +164,7 @@ function TutorPage() {
               ),
             )}
             {thinking ? (
-              <p className="text-xs text-accent pl-11">Nova is thinking…</p>
+              <p className="text-xs text-accent pl-11">Brainita AI is thinking…</p>
             ) : null}
             <div ref={endRef} />
           </div>
@@ -200,7 +191,7 @@ function TutorPage() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Message Nova…"
+                placeholder="Message Brainita AI…"
                 className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70 py-1.5"
               />
               <button
