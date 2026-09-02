@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { profileQuery } from "@/lib/profile";
 import { AppShell } from "@/components/AppShell";
-import { Brainita AICharacter } from "@/components/Brainita AICharacter";
+import { NovaCharacter } from "@/components/NovaCharacter";
 import {
   BOARDS,
   CLASSES,
@@ -109,7 +109,7 @@ function Onboarding() {
     <AppShell studentName={name}>
       <div className="grid lg:grid-cols-[minmax(0,300px)_1fr] gap-5 items-start">
         <aside className="panel-surface rounded-3xl p-5">
-          <Brainita AICharacter status="Getting to know you" focus={null} />
+          <NovaCharacter status="Getting to know you" focus={null} />
           <p className="mt-5 text-sm text-muted-foreground text-center text-pretty">
             Seven quick answers. Brainita AI plans around your class, board and weak spots.
           </p>
