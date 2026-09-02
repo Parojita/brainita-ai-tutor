@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Sign in to Brainita AI and study with Nova, a friendly AI tutor built for CBSE, ICSE and state board students from Class 4 to Class 12.",
+          "Sign in to Brainita AI, a friendly AI tutor built for CBSE, ICSE and state board students from Class 4 to Class 12.",
       },
       { property: "og:title", content: "Brainita AI — AI study tutor for Class 4 to 12" },
       {
@@ -84,14 +84,14 @@ function AuthPage() {
         <aside className="panel-surface rounded-3xl p-6">
           <NovaCharacter status="Waiting to meet you" focus={null} />
           <p className="mt-5 text-sm text-muted-foreground text-center text-pretty">
-            Nova adapts to your class, board and weak subjects — and plans around the time you
+            Brainita AI adapts to your class, board and weak subjects — and plans around the time you
             actually have.
           </p>
         </aside>
 
         <section className="panel-surface rounded-3xl p-6 sm:p-8">
           <h1 className="font-display font-bold text-3xl sm:text-4xl">
-            {mode === "login" ? "Welcome back" : "Start studying with Nova"}
+            {mode === "login" ? "Welcome back" : "Start studying with Brainita AI"}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             For students in Class 4 to Class 12.

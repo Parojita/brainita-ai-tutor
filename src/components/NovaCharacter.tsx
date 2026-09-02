@@ -3,13 +3,16 @@ type Props = {
   status?: string;
   name?: string;
   compact?: boolean;
+  /** Optional character image, e.g. "/brainita-ai.png". Falls back to the initial. */
+  imageSrc?: string | undefined;
 };
 
 export function NovaCharacter({
   focus,
-  status = "Listening · ready when you are",
-  name = "Nova",
+  status = "Ready to help",
+  name = "Brainita AI",
   compact = false,
+  imageSrc,
 }: Props) {
   return (
     <div className="flex flex-col items-center">
@@ -22,12 +25,21 @@ export function NovaCharacter({
           }}
         />
         <div
-          className={`relative ${compact ? "size-24" : "size-36"} rounded-full grid place-items-center animate-floaty border border-glow/40 bg-panel-strong`}
+          className={`relative ${compact ? "size-24" : "size-36"} overflow-hidden rounded-full grid place-items-center animate-floaty border border-glow/40 bg-panel-strong`}
           style={{ boxShadow: "var(--shadow-glow)" }}
         >
-          <span className="font-display font-bold text-5xl text-foreground">
-            {name.charAt(0)}
-          </span>
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={`${name} character`}
+              className="size-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <span className="font-display font-bold text-5xl text-foreground">
+              {name.charAt(0)}
+            </span>
+          )}
           <span className="absolute bottom-3 right-3 size-4 rounded-full bg-accent shadow-[0_0_12px_var(--accent)]" />
         </div>
       </div>

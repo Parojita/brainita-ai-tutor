@@ -23,12 +23,12 @@ export const Route = createFileRoute("/onboarding")({
       {
         name: "description",
         content:
-          "Tell Nova your class, board, goal, weak and strong subjects and daily study time to get a personalised tutoring plan.",
+          "Tell Brainita AI your class, board, goal, weak and strong subjects and daily study time to get a personalised tutoring plan.",
       },
       { property: "og:title", content: "Set up your study plan — Brainita AI" },
       {
         property: "og:description",
-        content: "A few quick answers and Nova builds your study plan.",
+        content: "A few quick answers and Brainita AI builds your study plan.",
       },
     ],
   }),
@@ -111,13 +111,13 @@ function Onboarding() {
         <aside className="panel-surface rounded-3xl p-5">
           <NovaCharacter status="Getting to know you" focus={null} />
           <p className="mt-5 text-sm text-muted-foreground text-center text-pretty">
-            Seven quick answers. Nova plans around your class, board and weak spots.
+            Seven quick answers. Brainita AI plans around your class, board and weak spots.
           </p>
         </aside>
 
         <section className="panel-surface rounded-3xl p-6 sm:p-8 space-y-7">
           <div>
-            <h1 className="font-display font-bold text-3xl">Tell Nova where you are</h1>
+            <h1 className="font-display font-bold text-3xl">Tell Brainita AI where you are</h1>
             <p className="text-muted-foreground text-sm mt-1">No wrong answers here.</p>
           </div>
 
@@ -227,7 +227,7 @@ function Block({
   children,
 }: {
   label: string;
-  hint?: string;
+  hint?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
