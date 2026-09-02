@@ -55,7 +55,7 @@ function ProfilePage() {
                 {profile.full_name || "Your profile"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                These details help Nova personalise explanations and study advice.
+                These details help Brainita AI personalise explanations and study advice.
               </p>
             </div>
             <Link
@@ -105,7 +105,7 @@ function ProfilePage() {
             to="/tutor"
             className="mt-6 inline-flex w-full items-center justify-center rounded-xl gradient-brand px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            Back to Nova
+            Back to Brainita AI
           </Link>
         </aside>
       </div>
