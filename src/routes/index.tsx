@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Sign in to Brainita AI and study with Brainita AI, a friendly AI tutor built for CBSE, ICSE and state board students from Class 4 to Class 12.",
+          "Sign in to Brainita AI, a friendly AI tutor built for CBSE, ICSE and state board students from Class 4 to Class 12.",
       },
       { property: "og:title", content: "Brainita AI — AI study tutor for Class 4 to 12" },
       {
