@@ -55,6 +55,7 @@
   --animate-floaty: floaty 5s ease-in-out infinite;
   --animate-ringpulse: ringpulse 4s ease-in-out infinite;
   --animate-rise: rise 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-soundwave: soundwave 0.9s ease-in-out infinite;
 }
 
 :root {
@@ -108,6 +109,18 @@
   50% {
     opacity: 0.8;
     transform: scale(1.06);
+  }
+}
+
+@keyframes soundwave {
+  0%,
+  100% {
+    height: 4px;
+    opacity: 0.5;
+  }
+  50% {
+    height: 16px;
+    opacity: 1;
   }
 }
 
