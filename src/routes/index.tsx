@@ -49,7 +49,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: name },
+            data: { name },
           },
         });
         if (error) throw error;

@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { profileQuery } from "@/lib/profile";
+import { profileQuery, loadMessages, saveMessage } from "@/lib/profile";
 import { askBrainita } from "@/lib/brainita.functions";
 import { AppShell } from "@/components/AppShell";
 import { NovaCharacter, type BrainitaState } from "@/components/NovaCharacter";
@@ -57,6 +57,19 @@ function TutorPage() {
   }, [student, navigate]);
 
   useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    loadMessages(user.id)
+      .then((history) => {
+        if (!cancelled && history.length) setMessages(history);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (!profile || messages.length) return;
     const first = profile.name?.split(" ")[0] || "there";
     const weak = student?.weak_subjects?.[0];
@@ -86,6 +99,10 @@ function TutorPage() {
       const res = await ask({ data: { message: clean } });
       setMessages([...next, { role: "assistant", content: res.reply }]);
       speak(res.reply);
+      if (user) {
+        await saveMessage(user.id, { role: "user", content: clean });
+        await saveMessage(user.id, { role: "assistant", content: res.reply });
+      }
     } catch {
       const fallback =
         "Brainita AI is having trouble connecting right now. Please try again.";
