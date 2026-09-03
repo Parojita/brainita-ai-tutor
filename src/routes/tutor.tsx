@@ -38,7 +38,8 @@ const PROMPTS = ["Explain a topic", "Quiz me", "Plan today"];
 function TutorPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { data: profile } = useQuery(profileQuery(user?.id));
+  const { data: student } = useQuery(profileQuery(user?.id));
+  const profile = student?.profile ?? null;
   const ask = useServerFn(askBrainita);
   const { supported, speaking, muted, speak, stop, toggleMute } = useSpeech();
 
@@ -52,13 +53,13 @@ function TutorPage() {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (profile && !profile.onboarded) navigate({ to: "/onboarding" });
-  }, [profile, navigate]);
+    if (student && !student.onboarded) navigate({ to: "/onboarding" });
+  }, [student, navigate]);
 
   useEffect(() => {
     if (!profile || messages.length) return;
-    const first = profile.full_name?.split(" ")[0] || "there";
-    const weak = profile.weak_subjects?.[0];
+    const first = profile.name?.split(" ")[0] || "there";
+    const weak = student?.weak_subjects?.[0];
     setMessages([
       {
         role: "assistant",
@@ -67,7 +68,7 @@ function TutorPage() {
         } Ask me anything, or tap a suggestion below.`,
       },
     ]);
-  }, [profile, messages.length]);
+  }, [profile, student, messages.length]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,17 +96,17 @@ function TutorPage() {
     }
   };
 
-  const focus = profile?.weak_subjects?.[0] ?? profile?.goal ?? null;
+  const focus = student?.weak_subjects?.[0] ?? profile?.goal ?? null;
   const state: BrainitaState = thinking ? "thinking" : speaking ? "speaking" : "ready";
 
   return (
-    <AppShell studentName={profile?.full_name}>
+    <AppShell studentName={profile?.name}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-end gap-3 mb-6 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Brainita AI, your AI tutor</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {profile
-              ? `Class ${profile.class_level ?? "—"} · ${profile.board ?? "—"} · Goal: ${profile.goal ?? "—"}`
+              ? `Class ${profile.class ?? "—"} · ${profile.board ?? "—"} · Goal: ${profile.goal ?? "—"}`
               : "Loading your plan…"}
           </p>
         </div>
@@ -164,7 +165,7 @@ function TutorPage() {
               ) : (
                 <div key={i} className="flex gap-3 flex-row-reverse animate-rise">
                   <div className="size-8 shrink-0 rounded-full bg-primary/20 border border-primary/40 grid place-items-center font-display font-semibold text-sm text-glow">
-                    {(profile?.full_name || "You").charAt(0).toUpperCase()}
+                    {(profile?.name || "You").charAt(0).toUpperCase()}
                   </div>
                   <div className="max-w-[80%] min-w-0">
                     <div className="rounded-2xl rounded-tr-sm gradient-brand text-primary-foreground px-4 py-3 text-sm leading-relaxed">
