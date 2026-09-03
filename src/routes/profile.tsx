@@ -37,7 +37,7 @@ function ProfilePage() {
 
   if (loading || isLoading || !user || !profile) {
     return (
-      <AppShell studentName={profile?.name}>
+      <AppShell studentName={profile?.name ?? undefined}>
         <section className="panel-surface rounded-3xl p-6 sm:p-8">
           <p className="text-sm text-muted-foreground">Loading your profile…</p>
         </section>
@@ -46,7 +46,7 @@ function ProfilePage() {
   }
 
   return (
-    <AppShell studentName={profile.name}>
+    <AppShell studentName={profile.name ?? undefined}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="panel-surface rounded-3xl p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">

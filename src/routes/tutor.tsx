@@ -117,7 +117,7 @@ function TutorPage() {
   const state: BrainitaState = thinking ? "thinking" : speaking ? "speaking" : "ready";
 
   return (
-    <AppShell studentName={profile?.name}>
+    <AppShell studentName={profile?.name ?? undefined}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-end gap-3 mb-6 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Brainita AI, your AI tutor</h1>
