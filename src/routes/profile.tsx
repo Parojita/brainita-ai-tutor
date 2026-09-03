@@ -22,22 +22,21 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { data: student, isLoading } = useQuery(profileQuery(user?.id));
-  const profile = student?.profile ?? null;
+  const { data: profile, isLoading } = useQuery(profileQuery(user?.id));
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/" });
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (!isLoading && user && student && !student.onboarded) {
+    if (!isLoading && user && (!profile || !profile.onboarded)) {
       navigate({ to: "/onboarding" });
     }
-  }, [isLoading, user, student, navigate]);
+  }, [isLoading, user, profile, navigate]);
 
   if (loading || isLoading || !user || !profile) {
     return (
-      <AppShell studentName={profile?.name ?? undefined}>
+      <AppShell studentName={profile?.full_name}>
         <section className="panel-surface rounded-3xl p-6 sm:p-8">
           <p className="text-sm text-muted-foreground">Loading your profile…</p>
         </section>
@@ -46,14 +45,14 @@ function ProfilePage() {
   }
 
   return (
-    <AppShell studentName={profile.name ?? undefined}>
+    <AppShell studentName={profile.full_name}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="panel-surface rounded-3xl p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-widest text-accent">Student profile</p>
               <h1 className="mt-1 font-display text-3xl font-bold">
-                {profile.name || "Your profile"}
+                {profile.full_name || "Your profile"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 These details help Brainita AI personalise explanations and study advice.
@@ -68,7 +67,7 @@ function ProfilePage() {
           </div>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <InfoCard label="Class" value={profile.class ? `Class ${profile.class}` : "Not set"} />
+            <InfoCard label="Class" value={profile.class_level ? `Class ${profile.class_level}` : "Not set"} />
             <InfoCard label="Board" value={profile.board || "Not set"} />
             <InfoCard label="Goal" value={profile.goal || "Not set"} />
             <InfoCard label="Daily study time" value={formatMinutes(profile.daily_minutes ?? 60)} />
@@ -77,13 +76,13 @@ function ProfilePage() {
           <div className="mt-7 grid gap-6 sm:grid-cols-2">
             <SubjectGroup
               label="Weak subjects"
-              items={student?.weak_subjects ?? []}
+              items={profile.weak_subjects ?? []}
               emptyText="No weak subjects selected."
               tone="warn"
             />
             <SubjectGroup
               label="Strong subjects"
-              items={student?.strong_subjects ?? []}
+              items={profile.strong_subjects ?? []}
               emptyText="No strong subjects selected."
               tone="good"
             />
@@ -93,13 +92,13 @@ function ProfilePage() {
         <aside className="panel-surface rounded-3xl p-5">
           <p className="text-xs uppercase tracking-widest text-accent">Brainita profile</p>
           <div className="mt-4 size-16 rounded-2xl gradient-brand grid place-items-center font-display text-2xl font-bold text-primary-foreground">
-            {(profile.name || "S").charAt(0).toUpperCase()}
+            {(profile.full_name || "S").charAt(0).toUpperCase()}
           </div>
           <p className="mt-4 font-display text-xl font-semibold">
-            {profile.name || "Student"}
+            {profile.full_name || "Student"}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {profile.class ? `Class ${profile.class}` : "Class not set"}
+            {profile.class_level ? `Class ${profile.class_level}` : "Class not set"}
             {profile.board ? ` · ${profile.board}` : ""}
           </p>
           <Link

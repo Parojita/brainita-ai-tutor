@@ -1,33 +1,44 @@
-import { supabase } from "@/integrations/supabase/client";
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 
-const FALLBACK = "Brainita AI is having trouble connecting right now. Please try again.";
+const ChatInput = z.object({
+  message: z.string().min(1).max(4000),
+});
+
+const FALLBACK =
+  "Brainita AI is having trouble connecting right now. Please try again.";
 
 /**
- * Calls the brainita-chat Supabase Edge Function, which validates the
- * Supabase session, derives user_id server-side, and forwards to n8n.
- * The n8n webhook URL never reaches the browser.
+ * Frontend -> this server function -> n8n webhook -> AI workflow -> reply.
+ * The webhook URL never reaches the browser.
  */
-export async function askBrainita(message: string): Promise<{ reply: string }> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData?.session?.access_token;
-  if (!token) throw new Error("Not signed in");
+export const askBrainita = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ChatInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const webhook = process.env["N8N_BRAINITA_WEBHOOK_URL"];
+    if (!webhook) return { reply: FALLBACK };
 
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/brainita-chat`;
+    try {
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: context.userId,
+          message: data.message,
+        }),
+      });
+      if (!res.ok) return { reply: FALLBACK };
 
-  const res = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-    body: JSON.stringify({ message }),
+      const raw = (await res.json().catch(() => null)) as
+        | { reply?: unknown }
+        | Array<{ reply?: unknown }>
+        | null;
+      const payload = Array.isArray(raw) ? raw[0] : raw;
+      const reply = typeof payload?.reply === "string" ? payload.reply.trim() : "";
+      return { reply: reply || FALLBACK };
+    } catch {
+      return { reply: FALLBACK };
+    }
   });
-
-  if (!res.ok) {
-    throw new Error(FALLBACK);
-  }
-
-  const data = (await res.json()) as { reply?: string };
-  return { reply: data.reply?.trim() || FALLBACK };
-}
