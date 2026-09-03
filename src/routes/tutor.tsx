@@ -74,6 +74,7 @@ function TutorPage() {
   const send = async (text: string) => {
     const clean = text.trim();
     if (!clean || thinking) return;
+    stop(); // stop any speech in progress before a new request
     const next: Msg[] = [...messages, { role: "user", content: clean }];
     setMessages(next);
     setInput("");
@@ -81,6 +82,7 @@ function TutorPage() {
     try {
       const res = await ask({ data: { message: clean } });
       setMessages([...next, { role: "assistant", content: res.reply }]);
+      speak(res.reply);
     } catch {
       const fallback =
         "Brainita AI is having trouble connecting right now. Please try again.";
@@ -92,6 +94,7 @@ function TutorPage() {
   };
 
   const focus = profile?.weak_subjects?.[0] ?? profile?.goal ?? null;
+  const state: BrainitaState = thinking ? "thinking" : speaking ? "speaking" : "ready";
 
   return (
     <AppShell studentName={profile?.full_name}>
@@ -111,11 +114,17 @@ function TutorPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-5">
         <aside className="panel-surface rounded-3xl p-5">
-          <NovaCharacter
-            /* set imageSrc="/brainita-ai.png" once the image is added to /public */
-            focus={focus}
-            status={thinking ? "Thinking…" : "Ready to help"}
-          />
+          <NovaCharacter focus={focus} state={state} />
+          {supported ? (
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-pressed={muted}
+              className="mt-4 w-full text-xs font-semibold px-3 py-2 rounded-xl bg-foreground/5 border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground transition"
+            >
+              {muted ? "🔇 Unmute Brainita" : "🔊 Mute Brainita"}
+            </button>
+          ) : null}
           <div className="mt-3 flex items-center gap-2 text-xs bg-foreground/5 border border-border rounded-xl px-3 py-2">
             <span className="text-primary">◆</span>
             <span className="text-muted-foreground">
@@ -126,6 +135,7 @@ function TutorPage() {
             </span>
           </div>
         </aside>
+
 
         <section className="panel-surface rounded-3xl flex flex-col min-h-[520px]">
           <div className="px-5 pt-5 pb-3 border-b border-border">
