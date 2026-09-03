@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { profileQuery } from "@/lib/profile";
 import { askBrainita } from "@/lib/brainita.functions";
 import { AppShell } from "@/components/AppShell";
-import { NovaCharacter } from "@/components/NovaCharacter";
+import { NovaCharacter, type BrainitaState } from "@/components/NovaCharacter";
+import { useSpeech } from "@/hooks/useSpeech";
 import { formatMinutes } from "@/lib/curriculum";
 
 export const Route = createFileRoute("/tutor")({
@@ -39,6 +40,7 @@ function TutorPage() {
   const navigate = useNavigate();
   const { data: profile } = useQuery(profileQuery(user?.id));
   const ask = useServerFn(askBrainita);
+  const { supported, speaking, muted, speak, stop, toggleMute } = useSpeech();
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
