@@ -2,8 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { profileQuery, saveStudentProfile } from "@/lib/profile";
+import { profileQuery } from "@/lib/profile";
 import { AppShell } from "@/components/AppShell";
 import { NovaCharacter } from "@/components/NovaCharacter";
 import {
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/onboarding")({
 function Onboarding() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { data: student } = useQuery(profileQuery(user?.id));
+  const { data: profile } = useQuery(profileQuery(user?.id));
 
   const [name, setName] = useState("");
   const [classLevel, setClassLevel] = useState<number | null>(null);
@@ -53,15 +54,15 @@ function Onboarding() {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (!student?.profile) return;
-    setName(student.profile.name || "");
-    setClassLevel(student.profile.class);
-    setBoard(student.profile.board);
-    setGoal(student.profile.goal);
-    setWeak(student.weak_subjects);
-    setStrong(student.strong_subjects);
-    setMinutes(student.profile.daily_minutes ?? 60);
-  }, [student]);
+    if (!profile) return;
+    setName(profile.full_name || "");
+    setClassLevel(profile.class_level);
+    setBoard(profile.board);
+    setGoal(profile.goal);
+    setWeak(profile.weak_subjects ?? []);
+    setStrong(profile.strong_subjects ?? []);
+    setMinutes(profile.daily_minutes ?? 60);
+  }, [profile]);
 
   const goals = useMemo(() => goalsForClass(classLevel), [classLevel]);
   const subjects = useMemo(() => subjectsForClass(classLevel), [classLevel]);
@@ -85,23 +86,22 @@ function Onboarding() {
       return;
     }
     setBusy(true);
-    try {
-      await saveStudentProfile({
-        userId: user.id,
-        name: name.trim(),
-        classLevel,
-        board,
-        goal,
-        dailyMinutes: minutes,
-        weak,
-        strong,
-      });
-    } catch {
-      setBusy(false);
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: name.trim(),
+      class_level: classLevel,
+      board,
+      goal,
+      weak_subjects: weak,
+      strong_subjects: strong,
+      daily_minutes: minutes,
+      onboarded: true,
+    });
+    setBusy(false);
+    if (error) {
       toast.error("Could not save your plan. Please try again.");
       return;
     }
-    setBusy(false);
     navigate({ to: "/tutor" });
   };
 
