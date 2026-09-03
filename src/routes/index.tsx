@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { NovaCharacter } from "@/components/NovaCharacter";
@@ -34,6 +33,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/tutor" });
@@ -44,7 +44,7 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -53,30 +53,72 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+
+        if (data.user && !data.session) {
+          setEmailSent(true);
+          return;
+        }
         toast.success("Welcome to Brainita AI!");
+        navigate({ to: "/onboarding" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        navigate({ to: "/onboarding" });
       }
-      navigate({ to: "/onboarding" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      if (message.includes("Invalid login credentials")) {
+        toast.error("Wrong email or password. Please try again.");
+      } else if (
+        message.includes("User already registered") ||
+        message.includes("already been registered")
+      ) {
+        toast.error("An account with this email already exists. Try signing in instead.");
+      } else if (message.includes("Email not confirmed")) {
+        toast.error("Please check your email and click the confirmation link before signing in.");
+      } else if (message.includes("Failed to fetch") || message.includes("network")) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(message);
+      }
     } finally {
       setBusy(false);
     }
   };
 
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Google sign-in failed. Please try again.");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/onboarding" });
-  };
+  if (emailSent) {
+    return (
+      <AppShell showNav={false}>
+        <div className="grid lg:grid-cols-[minmax(0,320px)_1fr] gap-5 items-start mt-6">
+          <aside className="panel-surface rounded-3xl p-6">
+            <NovaCharacter status="Waiting for you" focus={null} />
+            <p className="mt-5 text-sm text-muted-foreground text-center text-pretty">
+              Brainita AI is ready when you are.
+            </p>
+          </aside>
+
+          <section className="panel-surface rounded-3xl p-6 sm:p-8">
+            <h1 className="font-display font-bold text-3xl">Check your email</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              We sent a confirmation link to{" "}
+              <span className="font-semibold text-foreground">{email}</span>. Click the link in the
+              email to activate your account, then sign in.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setEmailSent(false);
+                setMode("login");
+              }}
+              className="mt-6 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-glow transition hover:bg-primary/15"
+            >
+              Back to sign in
+            </button>
+          </section>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell showNav={false}>
@@ -84,8 +126,8 @@ function AuthPage() {
         <aside className="panel-surface rounded-3xl p-6">
           <NovaCharacter status="Waiting to meet you" focus={null} />
           <p className="mt-5 text-sm text-muted-foreground text-center text-pretty">
-            Brainita AI adapts to your class, board and weak subjects — and plans around the time you
-            actually have.
+            Brainita AI adapts to your class, board and weak subjects — and plans around the time
+            you actually have.
           </p>
         </aside>
 
@@ -93,9 +135,7 @@ function AuthPage() {
           <h1 className="font-display font-bold text-3xl sm:text-4xl">
             {mode === "login" ? "Welcome back" : "Start studying with Brainita AI"}
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            For students in Class 4 to Class 12.
-          </p>
+          <p className="text-muted-foreground mt-1 text-sm">For students in Class 4 to Class 12.</p>
 
           <form onSubmit={submit} className="mt-6 space-y-4 max-w-md">
             {mode === "signup" ? (
@@ -136,18 +176,6 @@ function AuthPage() {
               className="w-full gradient-brand text-primary-foreground font-semibold text-sm rounded-xl px-4 py-3 disabled:opacity-60"
             >
               {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create my account"}
-            </button>
-
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <button
-              type="button"
-              onClick={google}
-              className="w-full rounded-xl border border-border bg-foreground/5 px-4 py-3 text-sm font-medium hover:border-primary/40"
-            >
-              Continue with Google
             </button>
 
             <p className="text-sm text-muted-foreground">

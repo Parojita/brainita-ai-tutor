@@ -1,1 +1,4 @@
-project_id = "ajbmbwakwqjxatjudjvh"
+project_id = "cqdmdxyyimjzehlxbcky"
+
+[functions.brainita-chat]
+verify_jwt = true

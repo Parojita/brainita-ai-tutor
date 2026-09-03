@@ -1,10 +1,6 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-// The connected Supabase project uses its own schema (profiles.user_id, name,
-// class, board, goal, daily_minutes + a separate student_subjects table), so we
-// query through an untyped client rather than the generated Database types.
-export const db = supabase as unknown as SupabaseClient<any, "public", any>;
+export const db = supabase;
 
 export type Profile = {
   id: string;

@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,7 +39,6 @@ function TutorPage() {
   const navigate = useNavigate();
   const { data: student } = useQuery(profileQuery(user?.id));
   const profile = student?.profile ?? null;
-  const ask = useServerFn(askBrainita);
   const { supported, speaking, muted, speak, stop, toggleMute } = useSpeech();
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -90,13 +88,13 @@ function TutorPage() {
   const send = async (text: string) => {
     const clean = text.trim();
     if (!clean || thinking) return;
-    stop(); // stop any speech in progress before a new request
+    stop();
     const next: Msg[] = [...messages, { role: "user", content: clean }];
     setMessages(next);
     setInput("");
     setThinking(true);
     try {
-      const res = await ask({ data: { message: clean } });
+      const res = await askBrainita(clean);
       setMessages([...next, { role: "assistant", content: res.reply }]);
       speak(res.reply);
       if (user) {
@@ -104,8 +102,7 @@ function TutorPage() {
         await saveMessage(user.id, { role: "assistant", content: res.reply });
       }
     } catch {
-      const fallback =
-        "Brainita AI is having trouble connecting right now. Please try again.";
+      const fallback = "Brainita AI is having trouble connecting right now. Please try again.";
       setMessages([...next, { role: "assistant", content: fallback }]);
       toast.error(fallback);
     } finally {
@@ -120,7 +117,9 @@ function TutorPage() {
     <AppShell studentName={profile?.name ?? undefined}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-end gap-3 mb-6 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-display font-bold text-3xl sm:text-4xl">Meet Brainita AI, your AI tutor</h1>
+          <h1 className="font-display font-bold text-3xl sm:text-4xl">
+            Meet Brainita AI, your AI tutor
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {profile
               ? `Class ${profile.class ?? "—"} · ${profile.board ?? "—"} · Goal: ${profile.goal ?? "—"}`
@@ -149,13 +148,10 @@ function TutorPage() {
             <span className="text-primary">◆</span>
             <span className="text-muted-foreground">
               Daily goal:{" "}
-              <span className="text-foreground">
-                {formatMinutes(profile?.daily_minutes ?? 60)}
-              </span>
+              <span className="text-foreground">{formatMinutes(profile?.daily_minutes ?? 60)}</span>
             </span>
           </div>
         </aside>
-
 
         <section className="panel-surface rounded-3xl flex flex-col min-h-[520px]">
           <div className="px-5 pt-5 pb-3 border-b border-border">
@@ -176,7 +172,9 @@ function TutorPage() {
                     <div className="rounded-2xl rounded-tl-sm bg-panel-strong border border-border px-4 py-3 text-sm leading-relaxed prose-nova">
                       <ReactMarkdown>{m.content}</ReactMarkdown>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/70 mt-1">Brainita AI · AI Tutor</p>
+                    <p className="text-[11px] text-muted-foreground/70 mt-1">
+                      Brainita AI · AI Tutor
+                    </p>
                   </div>
                 </div>
               ) : (
