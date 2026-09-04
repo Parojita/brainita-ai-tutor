@@ -78,11 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Brainita AI — AI study tutor for Class 4 to 12" },
+      {
+        name: "description",
+        content:
+          "Brainita AI is a friendly AI study tutor for Class 4 to Class 12 students across CBSE, ICSE and state boards.",
+      },
+      { name: "author", content: "Brainita AI" },
+      { property: "og:title", content: "Brainita AI — AI study tutor for Class 4 to 12" },
+      {
+        property: "og:description",
+        content: "Your personal AI tutor for school, boards and beyond.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
